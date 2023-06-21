@@ -20,6 +20,7 @@ def web_scrape_for_houses():
     for url in urls:
         page = requests.get(url).text
         html_content = BeautifulSoup(page, 'html.parser')
+        print(html_content)
         house_class = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
 
         regex_pattern = '"result-\d+"'
@@ -83,4 +84,4 @@ def send_email():
 
 
 if __name__ == '__main__':
-    start_schedular()
+    start_scheduler()
