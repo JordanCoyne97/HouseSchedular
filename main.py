@@ -29,7 +29,7 @@ def web_scrape_for_houses():
     return house_ids
 
 
-def start_schedular():
+def start_scheduler():
     print("Starting schedule")
     old_house_ids = []
 
