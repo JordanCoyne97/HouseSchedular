@@ -45,7 +45,6 @@ def start_schedular():
         time.sleep(300)
 
 
-
 def send_email():
     smtp_port = 587  # Standard secure SMTP port
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
@@ -56,8 +55,7 @@ def send_email():
     password = "vhltnmzhamvxxpve"
 
     # content of message
-
-    message = "YES I'LL PLAY DOTA"
+    message = "New house listed, check it out here: https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&from=0&pageSize=20"
 
     # Create context
     simple_email_context = ssl.create_default_context()
