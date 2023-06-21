@@ -2,9 +2,11 @@ import smtplib
 import ssl
 from bs4 import BeautifulSoup
 import requests
+import re
+import time
 
 
-def web_scraper():
+def web_scrape_for_houses():
     url1 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&from=0&pageSize=20"
     url2 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=20"
     url3 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=40"
@@ -13,18 +15,35 @@ def web_scraper():
 
     urls = [url1, url2, url3, url4, url5]
 
+    house_ids = []
+
     for url in urls:
-        source = requests.get(url)
-        soup = BeautifulSoup(source.content, 'html.parser')
+        page = requests.get(url).text
+        html_content = BeautifulSoup(page, 'html.parser')
+        house_class = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
 
-        # TODO scrape list of house ids
-        print("test")
+        regex_pattern = '"result-\d+"'
+        for i in house_class:
+            house_ids.append(re.findall(regex_pattern, str(i)))
+
+    return house_ids
 
 
-def start_schedule():
+def start_schedular():
     print("Starting schedule")
-    #send_email()
-    web_scraper()
+    old_house_ids = []
+
+    while True:
+        current_house_ids = web_scrape_for_houses()
+        if old_house_ids.sort() != current_house_ids.sort():
+            if len(current_house_ids) >= len(old_house_ids):
+                print("New House Found! Sending email")
+                send_email()
+
+        old_house_ids = current_house_ids
+        # sleep for 5min
+        time.sleep(300)
+
 
 
 def send_email():
@@ -32,7 +51,7 @@ def send_email():
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
 
     email_from = "coynejordan97@gmail.com"
-    email_to = "tommygibbons123@gmail.com"
+    email_to = "jordancoyne@hotmail.com"
 
     password = "vhltnmzhamvxxpve"
 
@@ -66,4 +85,4 @@ def send_email():
 
 
 if __name__ == '__main__':
-    start_schedule()
+    start_schedular()
