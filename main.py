@@ -20,12 +20,13 @@ def web_scrape_for_houses():
     for url in urls:
         page = requests.get(url).text
         html_content = BeautifulSoup(page, 'html.parser')
-        print(html_content)
         house_class = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
 
-        regex_pattern = '"result-\d+"'
+        regex_pattern = 'result-\d+'
         for i in house_class:
-            house_ids.append(re.findall(regex_pattern, str(i)))
+            house_names = re.findall(regex_pattern, str(i))
+            for j in house_names:
+                house_ids.append(int(j.replace("result-", "")))
 
     return house_ids
 
@@ -36,17 +37,30 @@ def start_scheduler():
 
     while True:
         current_house_ids = web_scrape_for_houses()
-        if old_house_ids.sort() != current_house_ids.sort():
-            if len(current_house_ids) >= len(old_house_ids):
-                print("New House Found! Sending email")
-                send_email()
+
+        # sort the two lists
+        current_house_ids.sort()
+        old_house_ids.sort()
+
+        print("old     size =" + str(len(old_house_ids)) + str(old_house_ids))
+        print("current size =" + str(len(current_house_ids)) + str(current_house_ids))
+
+        new_house_ids = []
+
+        # Make sure not to send email on first run
+        if old_house_ids:
+            for house_id in current_house_ids:
+                if house_id not in old_house_ids:
+                    new_house_ids.append(house_id)
+            if new_house_ids:
+                print("New house found, ids =" + str(new_house_ids))
+                send_email(new_house_ids)
 
         old_house_ids = current_house_ids
-        # sleep for 5min
         time.sleep(300)
 
 
-def send_email():
+def send_email(new_house_ids):
     smtp_port = 587  # Standard secure SMTP port
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
 
@@ -56,7 +70,7 @@ def send_email():
     password = "vhltnmzhamvxxpve"
 
     # content of message
-    message = "New house listed, check it out here: https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&from=0&pageSize=20"
+    message = "New house listed"
 
     # Create context
     simple_email_context = ssl.create_default_context()
