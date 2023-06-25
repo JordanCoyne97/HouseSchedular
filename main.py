@@ -35,7 +35,6 @@ def start_scheduler():
                         message = generate_email_details(house_id)
                         send_email(message)
 
-        old_house_ids = current_house_ids
         with open("old_house_ids.txt", "w") as file:
             for house_id in current_house_ids:
                 file.write(str(house_id))
