@@ -8,16 +8,15 @@ import time
 
 def start_scheduler():
     print("Starting schedule")
-    old_house_ids = []
-    # old_house_ids = [1, 2, 3]  # testing set
+
+    # On start up check the last list of ids saved
+    with open("old_house_ids.txt") as file:
+        old_house_ids = [int(x) for x in file.read().split()]
+        # old_house_ids = [1, 2, 3]  # testing set
 
     while True:
         current_house_ids = web_scrape_for_houses()
         # current_house_ids = [1, 2, 3, 5314604]  # testing set
-
-        # sort the two lists
-        current_house_ids.sort()
-        old_house_ids.sort()
 
         print("old     size =" + str(len(old_house_ids)) + str(old_house_ids))
         print("current size =" + str(len(current_house_ids)) + str(current_house_ids))
@@ -28,12 +27,20 @@ def start_scheduler():
                 if house_id not in old_house_ids:
                     new_house_ids.append(house_id)
             if new_house_ids:
-                print("New house(s) found, ids =" + str(new_house_ids))
-                for house_id in new_house_ids:
-                    message = generate_email_details(house_id)
-                    send_email(message)
+                print("New house(s) found, id(s) =" + str(new_house_ids))
+                # avoiding issue where daft doesn't load webpages correctly.
+                # There is never going to be more than 10 added at one time so using that as baseline check.
+                if len(new_house_ids) <= 10:
+                    for house_id in new_house_ids:
+                        message = generate_email_details(house_id)
+                        send_email(message)
 
         old_house_ids = current_house_ids
+        with open("old_house_ids.txt", "w") as file:
+            for house_id in current_house_ids:
+                file.write(str(house_id))
+                file.write("\n")
+
         time.sleep(300)
 
 
@@ -42,8 +49,8 @@ def web_scrape_for_houses():
     url2 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=20"
     url3 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=40"
     url4 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=60"
-    url5 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=80"
-    urls = [url1, url2, url3, url4, url5]
+    # url5 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=80"
+    urls = [url1, url2, url3, url4]
 
     house_ids = []
     for url in urls:
@@ -51,10 +58,8 @@ def web_scrape_for_houses():
         html_content = BeautifulSoup(page, 'html.parser')
         house_class = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
 
-        # Regex pattern to find the unique id string i.e "result-5314604"
-        regex_pattern = 'result-\d+'
         for house_tag in house_class:
-            house_details = re.findall(regex_pattern, str(house_tag))[0]
+            house_details = re.findall('result-\\d+', str(house_tag))[0]
             house_ids.append(int(house_details.replace("result-", "")))
 
     return house_ids
@@ -69,7 +74,7 @@ def generate_email_details(house_id):
 
     regex_pattern = 'result-' + str(house_id)
 
-    message = "House Added! \n\n"
+    message = ""
 
     for house_details in house_details_class:
         house_match = re.search(regex_pattern, str(house_details))
@@ -77,7 +82,7 @@ def generate_email_details(house_id):
             text = house_details.text.replace("€", ", ")
             house_link = re.findall('"\/for-rent\/.+?"', str(house_details))[0]
 
-            message = message + text + ".\n\n" + "https://www.daft.ie" + house_link.strip('"')
+            message = "House Added! \n\n" + text.strip("Save") + ".\n\n" + "https://www.daft.ie" + house_link.strip('"')
 
     return message
 
@@ -88,7 +93,7 @@ def send_email(message):
 
     email_from = "coynejordan97@gmail.com"
     test_email_list = ["jordancoyne@hotmail.com"]
-    email_list = ["jordancoyne@hotmail.com", "jneil998@gmail.com", "tommygibbons123@gmail.com", "oisin.s@hotmail.com"]
+    email_list = ["jordancoyne@hotmail.com", "oisin.s@hotmail.com", "saramurphi@gmail.com"]
 
     password = "vhltnmzhamvxxpve"
 
@@ -104,8 +109,9 @@ def send_email(message):
 
         # Send the email
         for email in test_email_list:
-            TIE_server.sendmail(email_from, email, message.encode('utf-8').strip())
-            print("Emails successfully sent to " + email)
+            if message:
+                TIE_server.sendmail(email_from, email, message.encode('utf-8').strip())
+                print("Emails successfully sent to " + email)
 
     # If there's an error, print it out
     except Exception as e:
