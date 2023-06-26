@@ -12,10 +12,8 @@ def start_scheduler():
     while True:
         with open("old_house_ids.txt") as file:
             old_house_ids = [int(x) for x in file.read().split()]
-            # old_house_ids = [1, 2, 3]  # testing set
 
         current_house_ids = web_scrape_for_houses()
-        # current_house_ids = [1, 2, 3, 5314604]  # testing set
 
         print("old     size =" + str(len(old_house_ids)) + str(old_house_ids))
         print("current size =" + str(len(current_house_ids)) + str(current_house_ids))
@@ -26,13 +24,13 @@ def start_scheduler():
                 if house_id not in old_house_ids:
                     new_house_ids.append(house_id)
             if new_house_ids:
-                print("New house(s) found, id(s) =" + str(new_house_ids))
+                print("New houses = " + str(new_house_ids))
                 # avoiding issue where daft doesn't load webpages correctly.
                 # There is never going to be more than 10 added at one time so using that as baseline check.
                 if len(new_house_ids) <= 10:
                     for house_id in new_house_ids:
                         message = generate_email_details(house_id)
-                        send_email(message, house_id)
+                        send_email(message)
 
         with open("old_house_ids.txt", "w") as file:
             for house_id in current_house_ids:
@@ -47,18 +45,22 @@ def web_scrape_for_houses():
     url2 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=20"
     url3 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=40"
     url4 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=60"
-    # url5 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=80"
-    urls = [url1, url2, url3, url4]
+    url5 = "https://www.daft.ie/property-for-rent/galway-city?sort=publishDateDesc&pageSize=20&from=80"
+    urls = [url1, url2, url3, url4, url5]
 
     house_ids = []
     for url in urls:
         page = requests.get(url).text
         html_content = BeautifulSoup(page, 'html.parser')
-        house_class = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
+        house_class_tag = html_content.find_all(class_="SearchPage__Result-gg133s-2 djuMQD")
 
-        for house_tag in house_class:
+        for house_tag in house_class_tag:
             house_details = re.findall('result-\\d+', str(house_tag))[0]
             house_ids.append(int(house_details.replace("result-", "")))
+
+        # If there are less than 20 we are at the end of the list, no need to load more web pages
+        if len(house_class_tag) < 20:
+            break
 
     return house_ids
 
@@ -85,7 +87,8 @@ def generate_email_details(house_id):
     return message
 
 
-def send_email(message, house_id):
+def send_email(message):
+    global TIE_server
     smtp_port = 587  # Standard secure SMTP port
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
 
@@ -94,27 +97,20 @@ def send_email(message, house_id):
     email_list = ["jordancoyne@hotmail.com", "oisin.s@hotmail.com", "saramurphi@gmail.com"]
 
     password = "vhltnmzhamvxxpve"
-
-    # Create context
     simple_email_context = ssl.create_default_context()
-
     try:
-        # Connect to the server
         TIE_server = smtplib.SMTP(smtp_server, smtp_port)
         TIE_server.starttls(context=simple_email_context)
         TIE_server.login(email_from, password)
 
-        # Send the email
         for email in test_email_list:
             if message:
                 TIE_server.sendmail(email_from, email, message.encode('utf-8').strip())
-                print("(House id: " + str(house_id) + ") -> Email successfully sent to " + email)
+                print("-> Email successfully sent to " + email)
 
-    # If there's an error, print it out
     except Exception as e:
         print(e)
 
-    # Close the port
     finally:
         TIE_server.quit()
 
