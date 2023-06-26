@@ -9,12 +9,11 @@ import time
 def start_scheduler():
     print("Starting schedule")
 
-    # On start up check the last list of ids saved
-    with open("old_house_ids.txt") as file:
-        old_house_ids = [int(x) for x in file.read().split()]
-        # old_house_ids = [1, 2, 3]  # testing set
-
     while True:
+        with open("old_house_ids.txt") as file:
+            old_house_ids = [int(x) for x in file.read().split()]
+            # old_house_ids = [1, 2, 3]  # testing set
+
         current_house_ids = web_scrape_for_houses()
         # current_house_ids = [1, 2, 3, 5314604]  # testing set
 
@@ -33,14 +32,14 @@ def start_scheduler():
                 if len(new_house_ids) <= 10:
                     for house_id in new_house_ids:
                         message = generate_email_details(house_id)
-                        send_email(message)
+                        send_email(message, house_id)
 
         with open("old_house_ids.txt", "w") as file:
             for house_id in current_house_ids:
                 file.write(str(house_id))
                 file.write("\n")
 
-        time.sleep(300)
+        time.sleep(600)
 
 
 def web_scrape_for_houses():
@@ -86,7 +85,7 @@ def generate_email_details(house_id):
     return message
 
 
-def send_email(message):
+def send_email(message, house_id):
     smtp_port = 587  # Standard secure SMTP port
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
 
@@ -104,13 +103,12 @@ def send_email(message):
         TIE_server = smtplib.SMTP(smtp_server, smtp_port)
         TIE_server.starttls(context=simple_email_context)
         TIE_server.login(email_from, password)
-        print("Connected to server")
 
         # Send the email
         for email in test_email_list:
             if message:
                 TIE_server.sendmail(email_from, email, message.encode('utf-8').strip())
-                print("Emails successfully sent to " + email)
+                print("(House id: " + str(house_id) + ") -> Email successfully sent to " + email)
 
     # If there's an error, print it out
     except Exception as e:
