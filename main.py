@@ -7,7 +7,7 @@ import time
 
 
 def start_scheduler():
-    print("Starting schedule")
+    print("Starting schedule..\nChecking for houses added since last start-up.\n")
 
     while True:
         with open("old_house_ids.txt") as file:
@@ -15,8 +15,8 @@ def start_scheduler():
 
         current_house_ids = web_scrape_for_houses()
 
-        print("old     size =" + str(len(old_house_ids)) + str(old_house_ids))
-        print("current size =" + str(len(current_house_ids)) + str(current_house_ids))
+        print("OLD_IDS size = " + str(len(old_house_ids)) + " " + str(old_house_ids))
+        print("CUR_IDS size = " + str(len(current_house_ids)) + " " + str(current_house_ids))
 
         new_house_ids = []
         if old_house_ids:
