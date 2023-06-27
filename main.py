@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import time
+import datetime
 
 
 def start_scheduler():
@@ -34,8 +35,7 @@ def start_scheduler():
 
         with open("old_house_ids.txt", "w") as file:
             for house_id in current_house_ids:
-                file.write(str(house_id))
-                file.write("\n")
+                file.write(str(house_id) + "\n")
 
         time.sleep(600)
 
@@ -83,8 +83,22 @@ def generate_email_details(house_id):
             house_link = re.findall('"\/for-rent\/.+?"', str(house_details))[0]
 
             message = "House Added! \n\n" + text.strip("Save") + ".\n\n" + "https://www.daft.ie" + house_link.strip('"')
+            add_to_history_file(text)
 
     return message
+
+
+def add_to_history_file(text):
+    date = datetime.datetime.now()
+    minute = date.minute
+    hour = date.hour
+    day = date.day
+    month = date.month
+    year = date.year
+    current_date = str(year)+"-"+str(month)+"-"+str(day)+" "+str(hour)+":"+str(minute)+", "
+
+    with open("house_history.txt", "a") as file:
+        file.write(str(current_date) + str(text) + "\n")
 
 
 def send_email(message):
