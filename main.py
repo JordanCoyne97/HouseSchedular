@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import time
-import datetime
 
 
 def start_scheduler():
@@ -83,26 +82,12 @@ def generate_email_details(house_id):
             house_link = re.findall('"\/for-rent\/.+?"', str(house_details))[0]
 
             message = "House Added! \n\n" + text.strip("Save") + ".\n\n" + "https://www.daft.ie" + house_link.strip('"')
-            add_to_history_file(text)
 
     return message
 
 
-def add_to_history_file(text):
-    date = datetime.datetime.now()
-    minute = date.minute
-    hour = date.hour
-    day = date.day
-    month = date.month
-    year = date.year
-    current_date = str(year)+"-"+str(month)+"-"+str(day)+" "+str(hour)+":"+str(minute)+", "
-
-    with open("house_history.txt", "a") as file:
-        file.write(str(current_date) + str(text) + "\n")
-
-
 def send_email(message):
-    global TIE_server
+    print("Connecting to Server...")
     smtp_port = 587  # Standard secure SMTP port
     smtp_server = "smtp.gmail.com"  # Google SMTP Server
 
@@ -117,8 +102,10 @@ def send_email(message):
         TIE_server.starttls(context=simple_email_context)
         TIE_server.login(email_from, password)
 
+        print("Connected.")
         for email in test_email_list:
             if message:
+                print("Sending email...")
                 TIE_server.sendmail(email_from, email, message.encode('utf-8').strip())
                 print("-> Email successfully sent to " + email)
 
