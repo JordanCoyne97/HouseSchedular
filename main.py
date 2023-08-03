@@ -137,9 +137,12 @@ def generate_rent_ie_email_details(house_id):
     html_content = BeautifulSoup(page, 'html.parser')
     house_class_tag = html_content.find_all(class_="sresult_image_container")
 
+    regex_pattern = str(house_id)
     for house_tag in house_class_tag:
-        house_link = re.findall('https:\/\/www\.rent\.ie\/.+?\/.+?\/[0-9]+', str(house_tag))[0]
-        message = "House Added on rent.ie! \n\n" + house_link
+        house_match = re.search(regex_pattern, str(house_tag))
+        if house_match:
+            house_link = re.findall('https:\/\/www\.rent\.ie\/.+?\/.+?\/[0-9]+', str(house_tag))[0]
+            message = "House Added on rent.ie! \n\n" + house_link
 
     return message
 
