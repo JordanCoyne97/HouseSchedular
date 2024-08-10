@@ -1,1 +1,1 @@
-Web scrape for houses to rent and send an email
+A daft.ie webscraper to check for new houses
